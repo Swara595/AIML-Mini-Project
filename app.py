@@ -1,6 +1,7 @@
 # app.py - Phase 9: Streamlit dashboard
 # Run with:  streamlit run app.py
 import os
+from datetime import datetime
 import pandas as pd
 import joblib
 import mlflow
@@ -10,6 +11,9 @@ import explain
 import rules
 import scam_detector
 import mule_detector
+import retrain
+
+FEEDBACK_FILE = "feedback.csv"
 
 st.set_page_config(page_title="UPI Fraud Detection",
                    page_icon="🛡️", layout="wide")
@@ -107,7 +111,28 @@ def score_payment(sender, receiver, amount, txn_type, hour, new_device, recent, 
     return {"label": label, "emoji": emoji, "advice": advice, "type": ftype,
             "final": final, "model_prob": model_prob, "msg_prob": msg_prob,
             "msg_label": msg_label, "mule": mule_found, "reasons": reasons,
-            "is_new_payee": is_new_payee, "avg": avg}
+            "is_new_payee": is_new_payee, "avg": avg, "row": row}
+
+
+# ---------- feedback: save the user's answer to feedback.csv ----------
+def save_feedback(was_right):
+    last = st.session_state["last"]
+    res = last["res"]
+    # did the system call it fraud?
+    flagged = 1 if res["label"] != "GREEN" else 0
+    true_label = flagged if was_right else 1 - \
+        flagged     # "wrong" flips the answer
+
+    record = {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+              "sender": last["sender"], "receiver": last["receiver"]}
+    for f in ctx["features"]:
+        record[f] = res["row"][f]
+    record["system_said"] = res["label"]
+    record["is_fraud"] = true_label
+
+    pd.DataFrame([record]).to_csv(FEEDBACK_FILE, mode="a",
+                                  header=not os.path.exists(FEEDBACK_FILE), index=False)
+    last["feedback_done"] = True
 
 
 # ---------- quick demo cases (fill the form) ----------
@@ -158,8 +183,9 @@ st.title("🛡️ UPI Fraud Detection")
 st.caption("Checks a payment with 3 tools: a machine learning model, a scam-message "
            "detector and a mule-account graph.")
 
-tab1, tab2, tab3, tab4 = st.tabs(
-    ["Check a payment", "Transaction feed", "Mule network", "Model report"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    ["Check a payment", "Transaction feed", "Mule network", "Model report",
+     "Feedback & retrain"])
 
 # ================= TAB 1 =================
 with tab1:
@@ -191,8 +217,20 @@ with tab1:
     with right:
         st.subheader("Result")
         if go:
-            res = score_payment(sender, receiver, amount, txn_type, hour,
-                                new_device, recent, message)
+            # keep the result in session_state, so it stays on screen after a button click
+            st.session_state["last"] = {
+                "res": score_payment(sender, receiver, amount, txn_type, hour,
+                                     new_device, recent, message),
+                "sender": sender, "receiver": receiver, "amount": amount,
+                "message": message, "feedback_done": False}
+
+        last = st.session_state.get("last")
+        if last is not None:
+            res = last["res"]
+            amount = last["amount"]
+            message = last["message"]
+            st.caption("Result for: %s -> %s, Rs %d" %
+                       (last["sender"], last["receiver"], amount))
             text = "%s  %s RISK  |  %s" % (
                 res["emoji"], res["label"], res["advice"])
             if res["label"] == "GREEN":
@@ -219,6 +257,18 @@ with tab1:
                      if message.strip() != "" else "- Message check: no message")
             st.write("- Mule check: %s" %
                      ("MULE ACCOUNT FOUND" if res["mule"] else "clear"))
+
+            # ----- feedback (Phase 10) -----
+            st.write("**Was this decision right?**")
+            if last["feedback_done"]:
+                st.success(
+                    "Thanks! Saved to feedback.csv. Retrain from the last tab.")
+            else:
+                fb = st.columns(2)
+                fb[0].button("✅ Correct decision",
+                             on_click=save_feedback, args=(True,))
+                fb[1].button("❌ Wrong decision",
+                             on_click=save_feedback, args=(False,))
         else:
             st.info(
                 "Fill the form (or click a demo case) and press **Check this payment**.")
@@ -297,3 +347,46 @@ with tab4:
     if os.path.exists("shap_summary.png"):
         st.write("**Which features matter most (SHAP):**")
         st.image("shap_summary.png", width=700)
+
+# ================= TAB 5 =================
+with tab5:
+    st.subheader("Feedback and retraining")
+    st.write("Every time you press **Correct** or **Wrong** on a result, it is saved. "
+             "Retraining adds those payments to the training data, so the model learns from them.")
+
+    if os.path.exists(FEEDBACK_FILE):
+        fb_df = pd.read_csv(FEEDBACK_FILE)
+    else:
+        fb_df = pd.DataFrame()
+    st.metric("Feedback collected", len(fb_df))
+    if len(fb_df) > 0:
+        show = fb_df[["time", "sender", "receiver",
+                      "amount", "system_said", "is_fraud"]].tail(10)
+        show = show.rename(columns={"is_fraud": "true label (1 = fraud)"})
+        st.dataframe(show, hide_index=True)
+
+    if st.button("🔁 Retrain model with feedback", type="primary"):
+        with st.spinner("Retraining... (about 20 seconds)"):
+            st.session_state["retrain_result"] = retrain.retrain()
+        st.cache_resource.clear()      # so the dashboard loads the new model next time
+
+    r = st.session_state.get("retrain_result")
+    if r is not None:
+        if not r["ok"]:
+            st.info(r["message"])
+        else:
+            if r["accepted"]:
+                st.success(
+                    "New model accepted and saved. The old model was backed up.")
+            else:
+                st.warning(
+                    "New model rejected: its test F1 dropped too much. Old model kept.")
+            table = pd.DataFrame({
+                "Before": [r["old"]["precision"], r["old"]["recall"], r["old"]["f1"]],
+                "After": [r["new"]["precision"], r["new"]["recall"], r["new"]["f1"]]},
+                index=["Precision", "Recall", "F1"]).round(3)
+            st.dataframe(table)
+            st.write("Feedback payments handled correctly: **%d -> %d** of %d"
+                     % (r["old_fb_right"], r["new_fb_right"], r["feedback_rows"]))
+            st.caption("Both models are tested on the same untouched test set. "
+                       "The run is also logged in MLflow as 'Retrain_with_feedback'.")
