@@ -1,6 +1,7 @@
-  venv/
-  __pycache__/
-  *.pkl
-  mlruns/
-  mlflow.db
+venv/
+__pycache__/
+*.pkl
+mlruns/
+mlflow.db
 *.db
+mule_view.png
