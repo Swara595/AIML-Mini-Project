@@ -49,7 +49,7 @@ mlflow ui                      compare all experiment runs at http://127.0.0.1:5
 XGBoost numbers can change by a little from run to run, so yours may differ slightly.
 Scam detector and mule detector both score 1.0 on the synthetic data (see limits below).
 
-## Limits (be honest in the report)
+## Limits 
 - The data is **synthetic**, because real UPI data is private. Perfect scores for the scam
   and mule detectors come from the generated patterns and will be lower on real data.
 - Fraud type naming uses fixed rules written for this dataset.
