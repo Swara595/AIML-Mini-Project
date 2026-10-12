@@ -20,7 +20,8 @@ Put `upi_transactions.csv` and `sms_scam_messages.csv` in `data/`.
 ## Run
 ```
 python run_all.py              builds features, trains everything, saves models/
-streamlit run app.py           opens the dashboard
+streamlit run app.py           opens the Streamlit dashboard
+python api.py                  opens the web frontend at http://127.0.0.1:8000
 mlflow ui                      compare all experiment runs at http://127.0.0.1:5000
 ```
 
@@ -34,6 +35,8 @@ mlflow ui                      compare all experiment runs at http://127.0.0.1:5
 | `scam_detector.py` | scam SMS / link detector |
 | `mule_detector.py` | finds mule accounts in the payment graph |
 | `app.py` | Streamlit dashboard (5 tabs) |
+| `api.py`, `engine.py` | FastAPI backend for the web frontend |
+| `frontend/` | web UI: `index.html`, `style.css`, `app.js` |
 | `retrain.py` | retrains the model with user feedback |
 | `automl_baseline.py` | optional AutoML comparison (FLAML) |
 | `Dockerfile` | optional container for the dashboard |

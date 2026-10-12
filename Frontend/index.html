@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UPI Shield</title>
+    <meta name="description" content="Screen UPI payments for fraud, scam messages and mule accounts.">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- icon set -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-shield" viewBox="0 0 24 24">
+            <path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" />
+            <path d="M9 12l2 2 4-4" />
+        </symbol>
+        <symbol id="i-feed" viewBox="0 0 24 24">
+            <path d="M5 7h14M5 12h14M5 17h9" />
+        </symbol>
+        <symbol id="i-network" viewBox="0 0 24 24">
+            <circle cx="6" cy="7" r="2" />
+            <circle cx="6" cy="17" r="2" />
+            <circle cx="18" cy="12" r="2.5" />
+            <path d="M8 7l8 4M8 17l8-4" />
+        </symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24">
+            <path d="M5 19V10M12 19V5M19 19v-6" />
+        </symbol>
+        <symbol id="i-loop" viewBox="0 0 24 24">
+            <path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5" />
+        </symbol>
+        <symbol id="i-chip" viewBox="0 0 24 24">
+            <rect x="7" y="7" width="10" height="10" rx="2" />
+            <path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4" />
+        </symbol>
+        <symbol id="i-msg" viewBox="0 0 24 24">
+            <path d="M4 5h16v11H10l-5 4v-4H4z" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+            <path d="M5 12l4 4 10-10" />
+        </symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24">
+            <path d="M12 5v8M12 17v.5" />
+        </symbol>
+        <symbol id="i-minus" viewBox="0 0 24 24">
+            <path d="M6 12h12" />
+        </symbol>
+    </svg>
+
+    <a class="skip" href="#main">Skip to content</a>
+
+    <div class="shell">
+
+        <nav class="rail" aria-label="Main">
+            <a class="brand" href="#check">
+                <svg class="ic brand-mark" aria-hidden="true">
+                    <use href="#i-shield" />
+                </svg>
+                <span class="brand-name">UPI Shield</span>
+            </a>
+            <ul class="rail-links">
+                <li><a href="#check" data-tab="check"><svg class="ic" aria-hidden="true">
+                            <use href="#i-shield" />
+                        </svg>Check a payment</a></li>
+                <li><a href="#feed" data-tab="feed"><svg class="ic" aria-hidden="true">
+                            <use href="#i-feed" />
+                        </svg>Payment feed</a></li>
+                <li><a href="#mules" data-tab="mules"><svg class="ic" aria-hidden="true">
+                            <use href="#i-network" />
+                        </svg>Mule accounts</a></li>
+                <li><a href="#report" data-tab="report"><svg class="ic" aria-hidden="true">
+                            <use href="#i-chart" />
+                        </svg>Model report</a></li>
+                <li><a href="#learn" data-tab="learn"><svg class="ic" aria-hidden="true">
+                            <use href="#i-loop" />
+                        </svg>Feedback and retraining</a></li>
+            </ul>
+            <p class="rail-note">Runs on synthetic payment data. Scores are for the mini project, not real banking.</p>
+        </nav>
+
+        <main id="main" tabindex="-1">
+
+            <div id="banner" class="banner" role="alert" hidden></div>
+
+            <!-- ============ CHECK ============ -->
+            <section id="screen-check" class="screen" aria-labelledby="h-check">
+                <header class="screen-head">
+                    <h1 id="h-check">Check a payment</h1>
+                    <p>Every payment is screened by a fraud model, a scam-message check and a mule-account check. The
+                        highest risk wins.</p>
+                </header>
+
+                <div class="demos" role="group" aria-label="Demo payments">
+                    <span class="demos-label">Try a case</span>
+                    <div id="demo-chips" class="chips"></div>
+                </div>
+
+                <div class="check-grid">
+
+                    <form id="pay-form" class="pay" novalidate>
+                        <div class="row two">
+                            <div class="field">
+                                <label for="f-sender">Sender</label>
+                                <select id="f-sender" name="sender" required></select>
+                            </div>
+                            <div class="field">
+                                <label for="f-receiver">Receiver ID</label>
+                                <input id="f-receiver" name="receiver" type="text" autocomplete="off" spellcheck="false"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="row two">
+                            <div class="field">
+                                <label for="f-amount">Amount</label>
+                                <div class="amount-wrap"><span aria-hidden="true">₹</span>
+                                    <input id="f-amount" name="amount" type="number" min="1" step="1"
+                                        inputmode="numeric" required>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="f-recent">Payments in the last 2 minutes</label>
+                                <div class="stepper">
+                                    <button type="button" id="recent-down" aria-label="One fewer payment">−</button>
+                                    <input id="f-recent" name="recent" type="number" min="0" max="100" value="0"
+                                        inputmode="numeric">
+                                    <button type="button" id="recent-up" aria-label="One more payment">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <fieldset class="field">
+                            <legend>Payment type</legend>
+                            <div class="segmented" id="f-type">
+                                <label><input type="radio" name="txn_type" value="MERCHANT"
+                                        checked><span>Merchant</span></label>
+                                <label><input type="radio" name="txn_type" value="P2P"><span>Person to
+                                        person</span></label>
+                                <label><input type="radio" name="txn_type" value="QR_PAYMENT"><span>QR
+                                        code</span></label>
+                                <label><input type="radio" name="txn_type" value="COLLECT_REQUEST"><span>Collect
+                                        request</span></label>
+                            </div>
+                        </fieldset>
+
+                        <div class="field">
+                            <label for="f-hour">Time of day <output id="hour-out" for="f-hour">14:00</output></label>
+                            <input id="f-hour" name="hour" type="range" min="0" max="23" value="14">
+                        </div>
+
+                        <label class="switch">
+                            <input id="f-device" name="new_device" type="checkbox" role="switch">
+                            <span class="switch-track" aria-hidden="true"></span>
+                            <span>Paid from a new device</span>
+                        </label>
+
+                        <div class="field">
+                            <label for="f-message">Message or link <span class="optional">(optional)</span></label>
+                            <input id="f-message" name="message" type="text" autocomplete="off"
+                                placeholder="Note on the payment, or a link the sender received">
+                        </div>
+
+                        <button class="btn primary" id="screen-btn" type="submit">Screen payment</button>
+                    </form>
+
+                    <!-- the result: gates, dial, verdict -->
+                    <section id="result" class="verdict" data-risk="idle" aria-live="polite"
+                        aria-label="Screening result">
+
+                        <ol class="gates" aria-label="The three checks">
+                            <li class="gate" data-state="idle" id="gate-model">
+                                <span class="gate-dot"><svg class="ic" aria-hidden="true">
+                                        <use href="#i-chip" />
+                                    </svg></span>
+                                <span class="gate-name">Fraud model</span>
+                                <span class="gate-out" id="gate-model-out">Waiting</span>
+                            </li>
+                            <li class="gate" data-state="idle" id="gate-message">
+                                <span class="gate-dot"><svg class="ic" aria-hidden="true">
+                                        <use href="#i-msg" />
+                                    </svg></span>
+                                <span class="gate-name">Message</span>
+                                <span class="gate-out" id="gate-message-out">Waiting</span>
+                            </li>
+                            <li class="gate" data-state="idle" id="gate-mule">
+                                <span class="gate-dot"><svg class="ic" aria-hidden="true">
+                                        <use href="#i-network" />
+                                    </svg></span>
+                                <span class="gate-name">Mule accounts</span>
+                                <span class="gate-out" id="gate-mule-out">Waiting</span>
+                            </li>
+                        </ol>
+
+                        <div class="dial-wrap">
+                            <svg class="dial" viewBox="0 0 200 118" role="img" aria-label="Risk dial" id="dial">
+                                <path id="arc-safe" class="arc safe" fill="none" />
+                                <path id="arc-review" class="arc review" fill="none" />
+                                <path id="arc-block" class="arc block" fill="none" />
+                                <g id="needle">
+                                    <line x1="100" y1="100" x2="100" y2="38" />
+                                    <circle cx="100" cy="100" r="6" />
+                                </g>
+                            </svg>
+                            <div class="dial-read">
+                                <span class="score" id="score">–</span>
+                                <span class="score-label">Risk score, 0 to 1</span>
+                            </div>
+                        </div>
+
+                        <div class="verdict-text">
+                            <h2 id="verdict-title">Ready to screen</h2>
+                            <p id="verdict-sub">Pick a case above, or fill in a payment and press Screen payment.</p>
+                        </div>
+
+                        <div id="verdict-body" hidden>
+                            <dl class="facts">
+                                <div>
+                                    <dt>Fraud type</dt>
+                                    <dd id="fact-type">–</dd>
+                                </div>
+                                <div>
+                                    <dt>Amount vs usual</dt>
+                                    <dd id="fact-ratio">–</dd>
+                                </div>
+                                <div>
+                                    <dt>Receiver</dt>
+                                    <dd id="fact-payee">–</dd>
+                                </div>
+                            </dl>
+
+                            <h3 class="reasons-title">Why</h3>
+                            <ul class="reasons" id="reasons"></ul>
+
+                            <div class="feedback" id="feedback">
+                                <p id="fb-question">Was this decision right?</p>
+                                <div class="fb-actions" id="fb-actions">
+                                    <button class="btn" type="button" id="fb-right">Yes, it was right</button>
+                                    <button class="btn" type="button" id="fb-wrong">No, it was wrong</button>
+                                </div>
+                                <p class="fb-done" id="fb-done" hidden>Saved. It will be used the next time you retrain
+                                    the model.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- ============ FEED ============ -->
+            <section id="screen-feed" class="screen" aria-labelledby="h-feed" hidden>
+                <header class="screen-head">
+                    <h1 id="h-feed">Payment feed</h1>
+                    <p>A sample of 30 payments (8 fraud, 22 normal) scored by the model. The last column shows whether
+                        the model got each one right.</p>
+                </header>
+                <div class="toolbar">
+                    <div class="tally" id="feed-tally"></div>
+                    <button class="btn" type="button" id="feed-more">Load a new sample</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="data" id="feed-table">
+                        <thead>
+                            <tr>
+                                <th>Payment</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th class="num">Amount</th>
+                                <th>Type</th>
+                                <th>Risk</th>
+                                <th class="num">Score</th>
+                                <th>Actual</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============ MULES ============ -->
+            <section id="screen-mules" class="screen" aria-labelledby="h-mules" hidden>
+                <header class="screen-head">
+                    <h1 id="h-mules">Mule accounts</h1>
+                    <p>A mule account takes money from many people and passes it on within minutes. It shows up in who
+                        pays whom, not in any single payment.</p>
+                </header>
+                <div class="toolbar">
+                    <div class="field inline">
+                        <label for="mule-pick">Account</label>
+                        <select id="mule-pick"></select>
+                    </div>
+                    <p class="muted" id="mule-count"></p>
+                </div>
+                <dl class="stat-row" id="mule-stats"></dl>
+                <figure class="graph">
+                    <svg id="mule-graph" viewBox="0 0 900 460" role="img" aria-labelledby="mule-cap"></svg>
+                    <figcaption id="mule-cap" class="muted"></figcaption>
+                </figure>
+            </section>
+
+            <!-- ============ REPORT ============ -->
+            <section id="screen-report" class="screen" aria-labelledby="h-report" hidden>
+                <header class="screen-head">
+                    <h1 id="h-report">Model report</h1>
+                    <p>Every model run, read from MLflow. Precision is how many flags were real. Recall is how much of
+                        the real fraud was caught.</p>
+                </header>
+                <div id="report-body"></div>
+                <figure class="shap" id="shap-wrap" hidden>
+                    <figcaption>Which features push a payment towards fraud (SHAP). Red dots are high values, blue are
+                        low. Dots on the right raise the risk.</figcaption>
+                    <img src="/files/shap_summary.png" alt="SHAP summary plot of feature importance" width="760">
+                </figure>
+            </section>
+
+            <!-- ============ LEARN ============ -->
+            <section id="screen-learn" class="screen" aria-labelledby="h-learn" hidden>
+                <header class="screen-head">
+                    <h1 id="h-learn">Feedback and retraining</h1>
+                    <p>Each time you mark a decision right or wrong, it is saved. Retraining adds those payments to the
+                        training data, with extra weight, then keeps the new model only if it does not score worse on
+                        the same test set.</p>
+                </header>
+                <div class="toolbar">
+                    <p class="big-count"><span id="fb-count">0</span> <span class="muted">feedback saved</span></p>
+                    <button class="btn primary" type="button" id="retrain-btn">Retrain model</button>
+                </div>
+                <div id="retrain-result" aria-live="polite"></div>
+                <div class="table-wrap" id="fb-table-wrap" hidden>
+                    <table class="data" id="fb-table">
+                        <thead>
+                            <tr>
+                                <th>Saved</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th class="num">Amount</th>
+                                <th>System said</th>
+                                <th>Your answer</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="empty" id="fb-empty">No feedback yet. Screen a payment, then mark the decision right or wrong.
+                </p>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -9,5 +9,7 @@ networkx
 joblib
 mlflow
 streamlit
+fastapi
+uvicorn
 # optional, only for automl_baseline.py:
 # flaml[automl]
