@@ -10,6 +10,7 @@ import os
 import threading
 import webbrowser
 from typing import Literal
+import joblib
 
 # always work from this folder, so models/ and data/ are found
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -17,6 +18,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = FastAPI(title="UPI Shield")
 eng = engine.Engine()
+
+lightgbm_model = joblib.load(
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "models",
+        "lightgbm_model.pkl"
+    )
+)
 
 
 class Payment(BaseModel):

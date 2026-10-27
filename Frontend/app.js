@@ -4,6 +4,7 @@ var $ = function (id) { return document.getElementById(id); };
 var NS = "http://www.w3.org/2000/svg";
 var state = { last: null, demos: [], mulesLoaded: false, feedLoaded: false, reportLoaded: false, seed: 1 };
 
+
 // ---------- helpers ----------
 function rupees(n) { return "₹" + Number(n).toLocaleString("en-IN"); }
 function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -575,4 +576,5 @@ async function init() {
     }
     showTab();
 }
+
 init();
